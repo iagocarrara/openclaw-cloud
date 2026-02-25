@@ -1,8 +1,18 @@
 import http from "http";
 import fetch from "node-fetch";
+import fs from "fs";
+import path from "path";
 
 const port = process.env.PORT || 8080;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
+// Diretório seguro onde os arquivos serão criados
+const WORKSPACE_DIR = "./workspace";
+
+// Cria a pasta automaticamente se não existir
+if (!fs.existsSync(WORKSPACE_DIR)) {
+  fs.mkdirSync(WORKSPACE_DIR);
+}
 
 const server = http.createServer(async (req, res) => {
 
