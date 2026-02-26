@@ -90,8 +90,10 @@ const server = http.createServer(async (req, res) => {
         ];
 
         const llmResponse = await callLLM(messages, tools);
-        const choice = llmResponse.choices?.[0];
 
+console.log("LLM RESPONSE:", JSON.stringify(llmResponse, null, 2));
+
+const choice = llmResponse.choices?.[0];
         if (choice?.message?.tool_calls) {
           const toolCall = choice.message.tool_calls[0];
           const args = JSON.parse(toolCall.function.arguments);
