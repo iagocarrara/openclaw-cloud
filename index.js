@@ -28,6 +28,16 @@ async function callLLM(messages, tools = null) {
 
   return response.json();
 }
+function readFile(filename) {
+  const safeName = path.basename(filename);
+  const filePath = path.join(WORKSPACE_DIR, safeName);
+
+  if (!fs.existsSync(filePath)) {
+    return `Arquivo ${safeName} não encontrado.`;
+  }
+
+  return fs.readFileSync(filePath, "utf-8");
+}
 
 function createFile(filename, content) {
   const safeName = path.basename(filename);
@@ -58,9 +68,34 @@ const server = http.createServer(async (req, res) => {
 
     req.on("end", async () => {
       try {
-        const { task } = JSON.parse(body);
+        const { task, file } = JSON.parse(body);
+
+// Se vier arquivo embutido
+if (file && file.filename && file.content_base64) {
+  const safeName = path.basename(file.filename);
+  const filePath = path.join(WORKSPACE_DIR, safeName);
+
+  const buffer = Buffer.from(file.content_base64, "base64");
+  fs.writeFileSync(filePath, buffer);
+
+  console.log(`Arquivo ${safeName} recebido via upload embutido.`);
+}
 
         const tools = [
+          {
+  type: "function",
+  function: {
+    name: "read_file",
+    description: "Lê o conteúdo de um arquivo do workspace",
+    parameters: {
+      type: "object",
+      properties: {
+        filename: { type: "string" }
+      },
+      required: ["filename"]
+    }
+  }
+},
           {
             type: "function",
             function: {
@@ -95,6 +130,13 @@ console.log("LLM RESPONSE:", JSON.stringify(llmResponse, null, 2));
 
 const choice = llmResponse.choices?.[0];
         if (choice?.message?.tool_calls) {
+          if (toolCall.function.name === "read_file") {
+  const result = readFile(args.filename);
+
+  res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+  res.end(JSON.stringify({ result }));
+  return;
+}
           const toolCall = choice.message.tool_calls[0];
           const args = JSON.parse(toolCall.function.arguments);
 
