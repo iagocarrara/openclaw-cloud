@@ -129,25 +129,28 @@ if (file && file.filename && file.content_base64) {
 console.log("LLM RESPONSE:", JSON.stringify(llmResponse, null, 2));
 
 const choice = llmResponse.choices?.[0];
-        if (choice?.message?.tool_calls) {
-          if (toolCall.function.name === "read_file") {
-  const result = readFile(args.filename);
 
-  res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-  res.end(JSON.stringify({ result }));
-  return;
+if (choice?.message?.tool_calls) {
+
+  const toolCall = choice.message.tool_calls[0];
+  const args = JSON.parse(toolCall.function.arguments);
+
+  if (toolCall.function.name === "read_file") {
+    const result = readFile(args.filename);
+
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ result }));
+    return;
+  }
+
+  if (toolCall.function.name === "create_file") {
+    const result = createFile(args.filename, args.content);
+
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ result }));
+    return;
+  }
 }
-          const toolCall = choice.message.tool_calls[0];
-          const args = JSON.parse(toolCall.function.arguments);
-
-          if (toolCall.function.name === "create_file") {
-            const result = createFile(args.filename, args.content);
-
-            res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-            res.end(JSON.stringify({ result }));
-            return;
-          }
-        }
 
         const answer = choice?.message?.content || "Sem resposta";
 
