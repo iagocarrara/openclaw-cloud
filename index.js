@@ -30,7 +30,6 @@ async function callLLM(messages, tools = null) {
 }
 
 function createFile(filename, content) {
-  // segurança básica contra path traversal
   const safeName = path.basename(filename);
   const filePath = path.join(WORKSPACE_DIR, safeName);
 
@@ -40,6 +39,17 @@ function createFile(filename, content) {
 }
 
 const server = http.createServer(async (req, res) => {
+
+  // 🔥 CORS (ESSENCIAL para funcionar no Hoppscotch/ReqBin)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
 
   if (req.method === "POST" && req.url === "/agent") {
 
@@ -80,10 +90,8 @@ const server = http.createServer(async (req, res) => {
         ];
 
         const llmResponse = await callLLM(messages, tools);
-
         const choice = llmResponse.choices?.[0];
 
-        // Se IA decidir usar ferramenta
         if (choice?.message?.tool_calls) {
           const toolCall = choice.message.tool_calls[0];
           const args = JSON.parse(toolCall.function.arguments);
@@ -97,7 +105,6 @@ const server = http.createServer(async (req, res) => {
           }
         }
 
-        // Caso não use ferramenta
         const answer = choice?.message?.content || "Sem resposta";
 
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
