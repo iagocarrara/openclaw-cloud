@@ -19,11 +19,11 @@ async function callLLM(messages, tools = null) {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${GROQ_API_KEY}`
     },
-    body: JSON.stringify({
-      model: "llama3-8b-8192",
-      messages,
-      tools
-    })
+   body: JSON.stringify({
+  model: "llama-3.1-8b-instant",
+  messages,
+  tools
+})
   });
 
   return response.json();
